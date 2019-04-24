@@ -29,25 +29,20 @@ namespace UPDLearning
 
     class Program
     {
-        static UdpClient udpServer = new UdpClient(new IPEndPoint(IPAddress.Parse("192.168.1.121"), 7789));
+        private static string ip = "193.112.3.26";    //"192.168.1.121";
+        
+        static UdpClient udpServer;
         static List<IPEndPoint> Cliens = new List<IPEndPoint>();
        private static byte[] data;
         static void Main(string[] args)
         {
+            ip = GetIpAddress();
+            udpServer = new UdpClient(new IPEndPoint(IPAddress.Parse(ip), 7789));
+ 
 
-       
-
-            //IPEndPoint iPEnd=new IPEndPoint(IPAddress.Parse("192.168.1.122"),7788);
-                
             Thread recevieT = new Thread( Receive);
             recevieT.Start();
-
-            //while (true)
-            //{
-            //    string mes = Console.ReadLine();
-            //    byte[] data = Encoding.UTF8.GetBytes(mes);
-            //    udpClient.Send(data, data.Length, iPEnd);
-            //}
+ 
             
         }
 
@@ -76,22 +71,23 @@ namespace UPDLearning
 
                             Cliens.Add(iPEnd);
                         }
-
-                        //TODO: 收到 掉线命令，然后在字典里进行处理 判断是否存在  如果 存在 进行移除;
                          
                         string mes = datas[1];
+     
+                        Boracast(data, iPEnd);
 
                         Console.WriteLine("从" + iPEnd.Address + "端口:" + iPEnd.Port + "收到了数据：" + mes);
-
-                        // TODO 进行广播 遍历连接进来的客服端
-                        Boracast(data, iPEnd);
+                        //掉线指令 移除
+                        if (mes.Split(':')[0] == "0")
+                        {
+                            Cliens.Remove(iPEnd);
+                        }
                     }
                     catch (Exception e)
                     {
                         if (e.GetType() == typeof(SocketException))
                         {
-                            //Console.WriteLine(udpServer.Available);
-                            //Console.WriteLine("断开连接" + iPEnd.Address.ToString());
+                        
                         }
                     }
 
