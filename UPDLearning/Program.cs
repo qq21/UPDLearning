@@ -8,48 +8,38 @@ using System.Threading;
 
 namespace UPDLearning
 {
-    class Client
-    {
-        private UdpClient _udpClient;
-
-        public bool isConnect
-        {
-            get
-            {
-                return _udpClient.Client.Connected;
-            }
-        }
-
-
-        public Client(IPEndPoint iPEndPoint)
-        {
-            _udpClient = new UdpClient(iPEndPoint);
-        }
-    }
+ 
 
     class Program
     {
         private static string ip = "193.112.3.26";    //"192.168.1.121";
-        
+
         static UdpClient udpServer;
+
         static List<IPEndPoint> Cliens = new List<IPEndPoint>();
-       private static byte[] data;
+
+        private static Queue<byte[]> mesQueue = new Queue<byte[]>(); //利用消息队列  进行消息分发，最好有个 消息中心的类
+        ///TODO:  利用这个基本 去搭建一个 简易版架构，消息中心处理  数据类模型 
+
+        private static byte[] data;
+
+
         static void Main(string[] args)
         {
             ip = GetIpAddress();
             udpServer = new UdpClient(new IPEndPoint(IPAddress.Parse(ip), 7789));
- 
 
-            Thread recevieT = new Thread( Receive);
+
+            Thread recevieT = new Thread(Receive);
             recevieT.Start();
- 
-            
+
+
         }
 
         static void Receive()
         {
 
-        
+
             Console.WriteLine("服务器启动成功,等待玩家连接");
             while (true)
             {
@@ -58,22 +48,23 @@ namespace UPDLearning
                 {
 
                     IPEndPoint iPEnd = new IPEndPoint(IPAddress.Any, 0);
-                
+
                     try
                     {
                         data = udpServer.Receive(ref iPEnd);
                         string[] datas = Encoding.UTF8.GetString(data).Split('@');
-
-                        //Todo:判断字典中 是否存在该 UDP
+                        //进消息队列 
+                        // 判断字典中 是否存在该 UDP
                         if (!Cliens.Contains(iPEnd))
                         {
                             Console.WriteLine(iPEnd.Address + ":" + iPEnd.Port + "连接进来了");
 
                             Cliens.Add(iPEnd);
                         }
-                         
+
                         string mes = datas[1];
-     
+
+                        if (Cliens.Count>1)                
                         Boracast(data, iPEnd);
 
                         Console.WriteLine("从" + iPEnd.Address + "端口:" + iPEnd.Port + "收到了数据：" + mes);
@@ -87,7 +78,7 @@ namespace UPDLearning
                     {
                         if (e.GetType() == typeof(SocketException))
                         {
-                        
+
                         }
                     }
 
@@ -95,22 +86,24 @@ namespace UPDLearning
             }
         }
 
+
         /// <summary>
         ///  对 客服端进行 广播， 判断是否处于连接 状态
         /// </summary>
         /// <param name="data"></param>
         /// <param name="iPEnd"></param>
-        static void Boracast(byte [] data,IPEndPoint iPEnd)
+        static void Boracast(byte[] data, IPEndPoint iPEnd)
         {
             foreach (var client in Cliens)
             {
-                if (client!=iPEnd)
-                {                       
+                if (client != iPEnd)
+                {
                     udpServer.Send(data, data.Length, client);
                 }
-            
+
             }
         }
+
 
         void ConnectServer()
         {
@@ -127,7 +120,7 @@ namespace UPDLearning
             udpClient.Send(data, data.Length, iPEnd);
         }
 
-        
+
         private static string GetIpAddress()
         {
             string hostName = Dns.GetHostName();   //获取本机名
@@ -137,6 +130,8 @@ namespace UPDLearning
 
             return localaddr.ToString();
         }
+
+
     }
  
 }
